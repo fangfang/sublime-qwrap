@@ -1,0 +1,21 @@
+[
+	{ 
+		"keys": ["tab"], 
+		"command": "js_short_name", 
+		"args": {"scope_type": "global"},
+	    "context": [{
+      		"operand": "source.js",
+      		"operator": "equal",
+      		"match_all": true,
+       		"key": "selector"      		
+    	}]
+	},
+	{ "keys": ["ctrl+tab"], "command": "js_short_name",
+	    "context": [{
+      		"operand": "source.js",
+      		"operator": "equal",
+      		"match_all": true,
+       		"key": "selector"      		
+    	}]
+	}
+]

@@ -31,7 +31,7 @@ def match_regions(view):
 #看看有没有定义过shortname
 #形如 : trim = QW.StringH.trim 这样的格式
 def find_shortname_defined(view, shortname, prefix, scope):
-	defineds = view.find_all(shortname + '\s*=\s*' + prefix, scope[0])
+	defineds = view.find_all(shortname + '\s*=\s*' + prefix)
 	for defined in defineds:
 		if(defined.begin() >= scope[0] and defined.end() <= scope[1]): 
 			#如果在当前scope中找到这样的定义，返回
@@ -41,7 +41,7 @@ def find_shortname_defined(view, shortname, prefix, scope):
 #找到变量定义的地方
 def find_defined_line(view, scope):
 	pos = None;
-	var_defs = view.find_all("var \w+", scope[0])
+	var_defs = view.find_all("var \w+")
 	for var_def in var_defs:
 		if(var_def.begin() >= scope[0] and var_def.end() <= scope[1]):
 			return view.line(var_def)
@@ -50,33 +50,33 @@ def find_defined_line(view, scope):
 #找到作用域开始的地方
 def find_begin_pos(view, scope):
 	pos = scope[0];
-	begin_defs = view.find_all("\{", scope[0])
+	begin_defs = view.find_all("\{")
 	for begin_def in begin_defs:
 		if(begin_def.begin() >= scope[0] and begin_def.end() <= scope[1]):
 			return begin_def.begin() + 1
 	return pos	
 
 def actual_in_scope(view, scope): #通过左右花括号的数量判断是否真的在当前的scope中
-	lefts_ =  view.find_all('\{', scope[0])
-	rights_ = view.find_all('\}', scope[0])
+	lefts_ =  view.find_all('\{')
+	rights_ = view.find_all('\}')
 
 	n = 0
-
+	
 	for left_ in lefts_:
 		if(left_.begin() >= scope[0] and left_.end() <= scope[1]):
 			n = n + 1;
 	for right_ in rights_:
 		if(right_.begin() >= scope[0] and right_.end() <= scope[1]):
 			n = n - 1;			
-
+	
 	return n > 0
 
 #得到当前最接近的作用域位置
 def find_current_scope(view, region, scope):
-	scopes = view.find_all('function(\s+\w+?)?([^)]+)', scope[0])
+	scopes = view.find_all('function(\s+\w+?)?([^)]+)')
 	current_scope = (scope[0], region.begin())
 	for scope in scopes:
-		if(scope < region and actual_in_scope(view, (scope.end(), region.end()))):
+		if(scope.end() <= region.begin() and actual_in_scope(view, (scope.end(), region.end()))):
 			current_scope = (scope.end(), region.begin())
 			continue
 	return current_scope

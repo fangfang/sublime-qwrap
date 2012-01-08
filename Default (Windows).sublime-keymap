@@ -1,6 +1,6 @@
 [
 	{ 
-		"keys": ["tab"], 
+		"keys": ["ctrl+tab"], 
 		"command": "js_short_name", 
 		"args": {"scope_type": "global"},
 	    "context": [{
@@ -10,7 +10,7 @@
        		"key": "selector"      		
     	}]
 	},
-	{ "keys": ["ctrl+tab"], "command": "js_short_name",
+	{ "keys": ["shift+tab"], "command": "js_short_name",
 	    "context": [{
       		"operand": "source.js",
       		"operator": "equal",

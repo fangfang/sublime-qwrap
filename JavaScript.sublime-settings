@@ -1,0 +1,11 @@
+//replace this file to Packages/JavaScript/JavaScript.sublime-settings for js files.
+{
+	"word_wrap": false,
+	
+	// Set to false to stop auto pairing quotes, brackets etc
+	"auto_match_enabled": false,
+
+	// Additional situations to trigger auto complete
+	"auto_complete_triggers": [ {"selector": "text.html", "characters": "<"}
+		, {"selector": "source.js", "characters": ".("}]
+}

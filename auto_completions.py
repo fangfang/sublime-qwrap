@@ -101,6 +101,8 @@ def find_key_ally(view, keys):
 				#scope必须要在ally_scope之内，这样才能有效访问ally
 				if(ally_scope[0] <= scope[0] and ally_scope[1] >= scope[1]):
 					ally = view.substr(ally)
+					if(ally.endswith(",")):
+						ally = ally[:-1]
 					return ally.split("=")[1].strip()
 
 def unique(list): #唯一化并且要保证次序
@@ -127,7 +129,7 @@ class AutoComplations(sublime_plugin.EventListener):
 				keys = keys[:-1]
 
 			keys = keys.split('.')
-			
+
 			#识别变量赋值： trim = QW.StringH.trim
 
 			ally_keys = '.'.join([find_key_ally(view, key) or key for key in keys]).split('.')
@@ -156,7 +158,7 @@ class AutoComplations(sublime_plugin.EventListener):
 			if(re.compile("\/.*\/[gim]?").match(keys)):
 				keys = "__regex"
 
-			#print keys
+			print keys
 
 			if(not keys):
 				return []

@@ -2,7 +2,7 @@
 
 import sublime, sublime_plugin
 import re
-from keyword_maps import keyword_maps
+from keyword_maps_user import keyword_maps, global_allies
 
 def all_scopes(view):
 	#找到所有的作用域
@@ -105,6 +105,13 @@ def find_key_ally(view, keys):
 						ally = ally[:-1]
 					return ally.split("=")[1].strip()
 
+def replace_global_allies(keys):
+	if(global_allies):
+		for ally in global_allies:
+			r = re.compile(ally[0])
+			keys = r.sub(ally[1], keys)
+	return keys
+
 def unique(list): #唯一化并且要保证次序
 	ret = []
 	for item in list:
@@ -138,37 +145,40 @@ class AutoComplations(sublime_plugin.EventListener):
 				keys = ally_keys
 				ally_keys = '.'.join([find_key_ally(view, key) or key for key in keys]).split('.')
 				ally_keys = unique(ally_keys)
-
+			
 			func = keys.pop()
 
 			keys = '.'.join(keys)
 
-			if(keys.startswith('new Date(')):
+			if(re.compile('^(new\s*)?Date\([^)]*\)$').match(keys)):
 				keys = "__date"
 			
-			if(keys.startswith('new Array(') or keys.startswith('[')):
+			if(re.compile('^(new\s*)?Array\([^)]*\)$').match(keys) or keys.startswith('[')):
 				keys = "__array"
-
-			if(re.compile("^\d+(.\d+)?").match(keys)):
+			
+			if(re.compile("^\d+(.\d+)?$").match(keys)):
 				keys = "__number"
 			
 			if(keys.endswith('"') or keys.endswith("'")):
 				keys = "__string"
 			
-			if(re.compile("\/.*\/[gim]?").match(keys)):
+			if(re.compile('^(new\s*)?RegExp\([^)]*\)$').match(keys) or re.compile("\/.*\/[gim]?").match(keys)):
 				keys = "__regex"
 
-			print keys
-
-			if(not keys):
-				return []
+			if(re.compile("^(QW\.)?((DomU?\.)|(W?\.)|(NodeW?\.))?g\(.*?\)").match(keys) or re.compile('.*((create)|(get))Element').match(keys)):
+				keys = "__element"
 			
-			if(keys.endswith(')')):
+			if(re.compile("^(QW\.)?(W|NodeW)?\(.*?\)").match(keys)):
 				keys = "__wrap"
-				func = None
-
+			
+			keys = replace_global_allies(keys)
+		
 			if(not is_brackets_input(view)): #不是输入 '('
-				compeletions = keyword_maps.get(keys) or keyword_maps.get('__default')
+				if keys:
+					compeletions = keyword_maps.get(keys) or keyword_maps.get('.'.join(['window', keys])) or keyword_maps.get('__object')
+				else:
+					compeletions = keyword_maps.get('window')
+
 				ret = []
 				#print compeletions
 				keys = compeletions.keys()
@@ -180,8 +190,11 @@ class AutoComplations(sublime_plugin.EventListener):
 					return []
 				return ret
 			else: #输入 '('
-				compeletions = (keyword_maps.get(keys) or keyword_maps.get('__wrap') or {}).get(func) or keyword_maps.get('__default').get(func) or [""]
-				
+
+				if(keys):
+					compeletions = (keyword_maps.get(keys) or keyword_maps.get('.'.join(['window', keys])) or keyword_maps.get('__object')).get(func) or [""]
+				else:
+					compeletions = keyword_maps.get('window').get(func) or [""]
 				if(compeletions):
 					compeletions = compeletions[1:] or [""]
 					

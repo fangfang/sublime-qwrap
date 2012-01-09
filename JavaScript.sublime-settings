@@ -7,5 +7,5 @@
 
 	// Additional situations to trigger auto complete
 	"auto_complete_triggers": [ {"selector": "text.html", "characters": "<"}
-		, {"selector": "source.js", "characters": ".("}]
+		, {"selector": "source.js - comment.block.js - comment.line.double-slash.js - string.quoted.single.js - string.quoted.double.js - string.regexp.js", "characters": ".("}]
 }

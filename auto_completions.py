@@ -74,23 +74,23 @@ def capture_input(view):
 		begin = keys.end()
 	return None
 
-#从当前输入的位置往前找wrap
-def capture_wrap(view):
+#从当前输入的位置往前找wrap - 猜测有换行的不匹配的 ). 可能是 wrap，但不一定准确
+def maybe_wrap(view):
 	sel = view.sel()[0] #取第一个selection
 	line = view.line(sel)
 	begin = line.begin()
 	while begin < line.end():
-		keys = view.find("\(.*\)", begin)
+		keys = view.find("\)", begin)
 		if(not keys or keys.begin() > line.end()): #没找到
 			break
 		if(keys.end()+1 == sel.begin()): #找到了
-			return view.substr(keys)
+			return "__wrap."
 		begin = keys.end()
 	return None
 
 #查找有木有 keys = ally 的赋值存在
 def find_key_ally(view, keys):
-	keys = keys.replace('[', '\[').replace(']','\]').replace('.','\.')
+	keys = keys.replace('[', '\[').replace(']','\]').replace('.','\.').replace('(', '\(').replace(')', '\)')
 	if(keys):
 		scopes = get_scope_chain(view, view.sel()[0])
 		#根据scope-chain找最近的ally（即赋值语句）
@@ -129,7 +129,7 @@ class AutoComplations(sublime_plugin.EventListener):
 		jsscope = view.find_by_selector('source.js')
 		if(not jsscope):
 			return []
-		keys = capture_input(view) or capture_wrap(view)
+		keys = capture_input(view) or maybe_wrap(view)
 
 		if(keys):
 			if(keys.endswith('(')):

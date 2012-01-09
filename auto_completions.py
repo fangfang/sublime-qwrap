@@ -80,11 +80,11 @@ def maybe_wrap(view):
 	line = view.line(sel)
 	begin = line.begin()
 	while begin < line.end():
-		keys = view.find("(^\s*|\))(\.\w*)?", begin)
+		keys = view.find("(^\s*|\))(\.\w*\(?)?", begin)
 		if(not keys or keys.begin() > line.end()): #没找到
 			break
 		if(keys.end() == sel.begin()): #找到了
-			return "__wrap."
+			return "__wrap" + re.compile('^\s*').sub('', view.substr(keys))
 		begin = keys.end()
 	return None
 
@@ -155,7 +155,7 @@ class AutoComplations(sublime_plugin.EventListener):
 		if(not jsscope):
 			return []
 		keys = capture_input(view) or maybe_wrap(view)
-		
+
 		if(keys):
 			if(keys.endswith('(')):
 				keys = keys[:-1]
@@ -196,7 +196,7 @@ class AutoComplations(sublime_plugin.EventListener):
 			if(re.compile("^(QW\.)?((DomU?\.)|(W?\.)|(NodeW?\.))?g\(.*?\)").match(keys) or re.compile('.*((create)|(get))Element').match(keys)):
 				keys = "__element"
 			
-			if(re.compile("^(QW\.)?(W|NodeW)?\(.*?\)").match(keys)):
+			if(re.compile("^(QW\.)?(W|NodeW)?\(.*?\)([^)]*\)[^)]*)?$").match(keys)):
 				keys = "__wrap"
 			
 			keys = replace_global_allies(keys)
@@ -204,10 +204,7 @@ class AutoComplations(sublime_plugin.EventListener):
 			if(not is_brackets_input(view)): #不是输入 '('
 
 				if keys:
-					compeletions = keyword_maps.get(keys) or keyword_maps.get('.'.join(['window', keys]))
-					if(not compeletions): #如果不知道是什么类型
-						compeletions = {}
-						[compeletions.update(keys) for keys in [keyword_maps.get('__object'), keyword_maps.get('__number'), keyword_maps.get('__string')]]
+					compeletions = keyword_maps.get(keys) or keyword_maps.get('.'.join(['window', keys])) or keyword_maps.get('__default')
 				else:
 					compeletions = keyword_maps.get('window')
 
@@ -224,10 +221,7 @@ class AutoComplations(sublime_plugin.EventListener):
 			else: #输入 '('
 
 				if(keys):
-					compeletions = keyword_maps.get(keys) or keyword_maps.get('.'.join(['window', keys]))
-					if(not compeletions): #如果不知道是什么类型
-						compeletions = {}
-						[compeletions.update(keys) for keys in [keyword_maps.get('__object'), keyword_maps.get('__number'), keyword_maps.get('__string')]]
+					compeletions = keyword_maps.get(keys) or keyword_maps.get('.'.join(['window', keys])) or keyword_maps.get('__default')
 					compeletions = compeletions.get(func) or [""]
 				else:
 					compeletions = keyword_maps.get('window').get(func) or [""]

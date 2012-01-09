@@ -424,8 +424,14 @@ retouch_to_wrap("QW.NodeW")
 keyword_maps.get('QW.NodeW').update(keyword_maps.get('QW.NodeH'))
 keyword_maps.get('QW.NodeW').update(keyword_maps.get('QW.EventTargetH'))
 
+_default = {}
+_default.update(keyword_maps.get('__object'))
+_default.update(keyword_maps.get('__number'))
+_default.update(keyword_maps.get('__string'))
+
 #update shortcuts
 _shortcuts = {
+	'__default' : _default,
 	'document.location' : keyword_maps.get('window.location'),
 	'window.Array' : keyword_maps.get('QW.ArrayH'),
 	'window.Function' : keyword_maps.get('QW.FunctionH'),

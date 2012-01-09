@@ -13,7 +13,7 @@ el.addClass(cls).removeAttr(str).on(click, function(){
 	
 	});
 
-g(el).
+W().a().b().
 
 function(){}
 NodeW("div").attr(key).addClass(cls)

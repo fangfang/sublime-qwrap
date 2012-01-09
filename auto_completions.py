@@ -65,12 +65,12 @@ def capture_input(view):
 	line = view.line(sel)
 	begin = line.begin()
 	while begin < line.end():
-		keys = view.find("[,\[\]\w\"\'\/]+(\(.*?\))?(\.[,\[\]\w\"\'\/]+(\(.*?\))?)*([.(])?", begin)
+		keys = view.find("(^|\s+)[,\[\]\w\"\'\/\{\}]+(\(.*?\))?(\.[,\[\]\w\"\'\/\{\}]+(\(.*?\))?)*([.(])?", begin)
 
 		if(not keys or keys.begin() > line.end()): #没找到
 			break
 		if(keys.end() == sel.begin()): #找到了
-			return view.substr(keys)
+			return view.substr(keys).strip()
 		begin = keys.end()
 	return None
 
@@ -80,30 +80,55 @@ def maybe_wrap(view):
 	line = view.line(sel)
 	begin = line.begin()
 	while begin < line.end():
-		keys = view.find("\)", begin)
+		keys = view.find("(^\s*|\))(\.\w*)?", begin)
 		if(not keys or keys.begin() > line.end()): #没找到
 			break
-		if(keys.end()+1 == sel.begin()): #找到了
+		if(keys.end() == sel.begin()): #找到了
 			return "__wrap."
 		begin = keys.end()
 	return None
 
+def find_in_scope(view, pattern, scope):
+	matches = view.find_all(pattern)
+	ret = []
+	for match in matches:
+		if(match.begin() >= scope[0] and match.end() <= scope[1]):
+			ret.append(match)
+	ret.reverse()
+	return ret
+
+#得到所有不可用的区间（注释、字符串内部 etc）
+def in_invalid_scope(view, region):
+	scopes = view.find_by_selector('comment.block.js, comment.line.double-slash.js, string.quoted.single.js, string.quoted.double.js, string.regexp.js')
+	for scope in scopes:
+		if(scope.contains(region)):
+			return True
+	return False
+
+#TODO: 得到完整的赋值表达式
+def get_assign_expr(view, keys, scope):
+	pass
+
 #查找有木有 keys = ally 的赋值存在
 def find_key_ally(view, keys):
-	keys = keys.replace('[', '\[').replace(']','\]').replace('.','\.').replace('(', '\(').replace(')', '\)')
+	keys = keys.replace('[', '\[').replace(']','\]').replace('.','\.').replace('(', '\(').replace(')', '\)').replace('{', '\{').replace('}', '\}');
 	if(keys):
-		scopes = get_scope_chain(view, view.sel()[0])
+		sel = view.sel()[0]
+		scopes = get_scope_chain(view, sel)
 		#根据scope-chain找最近的ally（即赋值语句）
 		for scope in scopes: #从最里面往外找
-			ally = view.find(keys + "\s*=\s*(new\s+)?[,\[\]\w\"\'\/]+(\(.*?\))?(\.[,\[\]\w\"\'\/]+(\(.*?\))?)*", scope[0])
-			if(ally and ally.end() < scope[1]):
-				ally_scope = get_scope_chain(view, ally)[0] #得到ally的最小作用域（闭包）
-				#scope必须要在ally_scope之内，这样才能有效访问ally
-				if(ally_scope[0] <= scope[0] and ally_scope[1] >= scope[1]):
-					ally = view.substr(ally)
-					if(ally.endswith(",")):
-						ally = ally[:-1]
-					return ally.split("=")[1].strip()
+			pattern = "(^|\s+)" + keys + "\s*=\s*(new\s+)?[,\[\]\w\"\'\/\{\}]+(\(.*?\))?(\.[,\[\]\w\"\'\/\{\}]+(\(.*?\))?)*"
+			allies = find_in_scope(view, pattern, (scope[0], sel.begin())) #从近到远的allies
+			
+			for ally in allies:
+				if(not in_invalid_scope(view, ally)): #不能在无效区间
+					ally_scope = get_scope_chain(view, ally)[0] #得到ally的最小作用域（闭包）
+					#scope必须要在ally_scope之内，这样才能有效访问ally
+					if(ally_scope[0] <= scope[0] and ally_scope[1] >= scope[1]):
+						ally = view.substr(ally)
+						if(ally.endswith(",")):
+							ally = ally[:-1]
+						return ally.split("=")[1].strip()
 
 def replace_global_allies(keys):
 	if(global_allies):
@@ -130,7 +155,7 @@ class AutoComplations(sublime_plugin.EventListener):
 		if(not jsscope):
 			return []
 		keys = capture_input(view) or maybe_wrap(view)
-
+		
 		if(keys):
 			if(keys.endswith('(')):
 				keys = keys[:-1]
@@ -150,10 +175,13 @@ class AutoComplations(sublime_plugin.EventListener):
 
 			keys = '.'.join(keys)
 
+			if(re.compile('^(new\s*)?Object\([^)]*\)$').match(keys) or keys.endswith('}')):
+				keys = "__object"
+
 			if(re.compile('^(new\s*)?Date\([^)]*\)$').match(keys)):
 				keys = "__date"
 			
-			if(re.compile('^(new\s*)?Array\([^)]*\)$').match(keys) or keys.startswith('[')):
+			if(re.compile('^(new\s*)?Array\([^)]*\)$').match(keys) or keys.endswith(']')):
 				keys = "__array"
 			
 			if(re.compile("^\d+(.\d+)?$").match(keys)):
@@ -172,10 +200,14 @@ class AutoComplations(sublime_plugin.EventListener):
 				keys = "__wrap"
 			
 			keys = replace_global_allies(keys)
-		
+			
 			if(not is_brackets_input(view)): #不是输入 '('
+
 				if keys:
-					compeletions = keyword_maps.get(keys) or keyword_maps.get('.'.join(['window', keys])) or keyword_maps.get('__object')
+					compeletions = keyword_maps.get(keys) or keyword_maps.get('.'.join(['window', keys]))
+					if(not compeletions): #如果不知道是什么类型
+						compeletions = {}
+						[compeletions.update(keys) for keys in [keyword_maps.get('__object'), keyword_maps.get('__number'), keyword_maps.get('__string')]]
 				else:
 					compeletions = keyword_maps.get('window')
 
@@ -192,7 +224,11 @@ class AutoComplations(sublime_plugin.EventListener):
 			else: #输入 '('
 
 				if(keys):
-					compeletions = (keyword_maps.get(keys) or keyword_maps.get('.'.join(['window', keys])) or keyword_maps.get('__object')).get(func) or [""]
+					compeletions = keyword_maps.get(keys) or keyword_maps.get('.'.join(['window', keys]))
+					if(not compeletions): #如果不知道是什么类型
+						compeletions = {}
+						[compeletions.update(keys) for keys in [keyword_maps.get('__object'), keyword_maps.get('__number'), keyword_maps.get('__string')]]
+					compeletions = compeletions.get(func) or [""]
 				else:
 					compeletions = keyword_maps.get('window').get(func) or [""]
 				if(compeletions):

@@ -430,7 +430,8 @@ _shortcuts = {
 	'window.Array' : keyword_maps.get('QW.ArrayH'),
 	'window.Function' : keyword_maps.get('QW.FunctionH'),
 	'window.String' : keyword_maps.get('QW.StringH'),
-	'window.Date' : keyword_maps.get('QW.DateH')
+	'window.Date' : keyword_maps.get('QW.DateH'),
+	'window.W' : keyword_maps.get('QW.NodeW')
 }
 
 keyword_maps.update(_shortcuts)

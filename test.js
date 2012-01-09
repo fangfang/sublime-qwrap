@@ -3,8 +3,17 @@
 (function a(){
 var StringH = QW.StringH,
 	trim = StringH.trim,
-	b = /123/g,
+	b =  /123/g,
 	c = b;
+
+b = "";
+
+el = W(texgt);
+el.addClass(cls).removeAttr(str).on(click, function(){
+	
+	});
+
+g(el).
 
 function(){}
 NodeW("div").attr(key).addClass(cls)

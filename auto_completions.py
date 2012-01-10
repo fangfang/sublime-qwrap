@@ -172,20 +172,12 @@ def reduce_global_allies(keys):
 
 	return keys
 
-def unique(list): #唯一化并且要保证次序
-	ret = []
-	for item in list:
-		if(item in ret):
-			continue
-		ret.append(item)
-	return ret
-
 class AutoComplations(sublime_plugin.EventListener):
 	def __init__(self):
 		self.scopes = []
 
 	def on_query_completions(self, view, prefix, locations):
-		
+
 		line = view.substr(view.line(view.sel()[0]))
 		if(not self.scopes or re.compile('function').match(line)):
 			self.scopes = all_scopes(view)
@@ -249,21 +241,26 @@ class AutoComplations(sublime_plugin.EventListener):
 			keys = reduce_global_allies(keys) 
 			
 			if(not is_brackets_input(view)): #不是输入 '('
-
+				
 				if keys:
 					compeletions = keyword_maps.get(keys) or keyword_maps.get('.'.join(['window', keys])) or keyword_maps.get('__default')
 				else:
 					compeletions = keyword_maps.get('window')
 
+				if(func and func in [k.strip() for k in keys]):
+					return []
+
 				ret = []
-				#print compeletions
+
+				if(func):
+					[compeletions.get(key) or compeletions.get(' '+key) or compeletions.update({key: [key]}) for key in view.extract_completions(func)]
+
 				keys = compeletions.keys()
 				keys.sort()
+
 				for compeletion in keys:
 					ret.append((compeletions.get(compeletion)[0] + " ",compeletion.strip()))
 
-				if(func and func in [k.strip() for k in keys]):
-					return []
 				return ret
 			else: #输入 '('
 
@@ -272,11 +269,15 @@ class AutoComplations(sublime_plugin.EventListener):
 					compeletions = compeletions.get(func) or [""]
 				else:
 					compeletions = keyword_maps.get('window').get(func) or [""]
+				
+				if(func.startswith('function')):
+					compeletions.append(func[9:-1])
+
 				if(compeletions):
 					compeletions = compeletions[1:] or [""]
 					
 					ret = []
 					#print compeletions
 					for compeletion in compeletions:
-						ret.append(("(" + compeletion.replace('"', '') + ")","" + compeletion + ")"))
+						ret.append(("(" + compeletion.replace('"', '') + ")",("" + compeletion + ")").replace('...)', '')))
 					return ret

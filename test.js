@@ -7,13 +7,20 @@ var StringH = QW.StringH,
 	c = b,
 	a = div.getElementsByTagName( "a" );
 
-aElW.addClass().ancestorNode(
+y = function(a,b,c){
+}
+
+y(a,b,c)
+
+aElW.addClass().ancestorNode(selector)
 
 elW.fire("blur")
 
 b = ""
 a = alert;
-W().on("click", function(e){})
+alert(msg)
+W().on("click", function(e){
+QW.FunctionH.bind(func, pThis, arg0, 
 el = W(texgt);
 el.addClass(cls).removeAttr(str).on(click., function(){
 	
@@ -22,7 +29,6 @@ el.addClass(cls).removeAttr(str).on(click., function(){
 /*x = function(){
 	
 }*/
-
 
 
 function(){}

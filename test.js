@@ -12,10 +12,15 @@ y = function(a,b,c){
 
 y(a,b,c)
 
+
 aElW.addClass().ancestorNode(selector)
-
+elW.on("blur", function(e){
+	ferer
+});
+use(modules, callback)
+FunctionH.bind(func, pThis, 
 elW.fire("blur")
-
+elW.fire("mousedown")
 b = ""
 a = alert;
 alert(msg)

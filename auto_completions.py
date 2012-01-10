@@ -177,6 +177,10 @@ class AutoComplations(sublime_plugin.EventListener):
 		self.scopes = []
 
 	def on_query_completions(self, view, prefix, locations):
+		
+		jsscope = view.find_by_selector('source.js')
+		if(not jsscope):
+			return []
 
 		line = view.substr(view.line(view.sel()[0]))
 		if(not self.scopes or re.compile('function').match(line)):
@@ -184,9 +188,6 @@ class AutoComplations(sublime_plugin.EventListener):
 
 		view.scopes = self.scopes
 
-		jsscope = view.find_by_selector('source.js')
-		if(not jsscope):
-			return []
 		keys = capture_input(view) or maybe_wrap(view)
 
 		if(keys):

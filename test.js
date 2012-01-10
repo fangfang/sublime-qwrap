@@ -4,16 +4,25 @@
 var StringH = QW.StringH,
 	trim = StringH.trim,
 	b =  /123/g,
-	c = b;
+	c = b,
+	a = div.getElementsByTagName( "a" );
 
-b = "";
+aElW.addClass().ancestorNode(
+
+elW.fire("blur")
+
+b = ""
 
 el = W(texgt);
-el.addClass(cls).removeAttr(str).on(click, function(){
+el.addClass(cls).removeAttr(str).on(click., function(){
 	
 	});
 
-W().a().b().
+/*x = function(){
+	
+}*/
+
+
 
 function(){}
 NodeW("div").attr(key).addClass(cls)
@@ -30,4 +39,3 @@ function(){
 }
 
 })();
-

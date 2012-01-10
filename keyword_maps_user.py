@@ -1,6 +1,6 @@
 #coding: utf8
 
-from keyword_maps import keyword_maps, global_allies
+from keyword_maps import keyword_maps, global_reducer
 
 #用户自定义提示添加在下面
 

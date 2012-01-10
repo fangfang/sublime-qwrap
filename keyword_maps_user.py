@@ -8,9 +8,9 @@ user_maps = {
 	
 }
 
-user_allies = [
+user_reducer = [
 	
 ]
 
 keyword_maps.update(user_maps)
-global_allies = global_allies + user_allies
+global_reducer = global_reducer + user_reducer

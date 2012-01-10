@@ -12,7 +12,8 @@ aElW.addClass().ancestorNode(
 elW.fire("blur")
 
 b = ""
-
+a = alert;
+W().on("click", function(e){})
 el = W(texgt);
 el.addClass(cls).removeAttr(str).on(click., function(){
 	

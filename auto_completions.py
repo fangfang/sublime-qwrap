@@ -139,7 +139,7 @@ def find_key_ally(view, keys, sel):
 
 		for ally in allies:
 
-			if(not in_invalid_scope(view, ally)): #不能在无效区间
+			if(not in_invalid_region(view, ally)): #不能在无效区间
 				ally_scope = get_current_scope(view, ally) #得到ally的最小作用域（闭包）
 
 				#sel必须要在ally_scope之内
@@ -205,14 +205,13 @@ class AutoComplations(sublime_plugin.EventListener):
 			key_prefix = []
 
 			#识别变量赋值： trim = QW.StringH.trim
-			for key in keys[:-1]:
+			for key in keys:
 				key_prefix.append(key)
-				key_prefix = find_key_ally(view, '.'.join(key_prefix), view.sel()[0]).split('.')
+				if(key):
+					key_prefix = find_key_ally(view, '.'.join(key_prefix), view.sel()[0]).split('.')
 			
-			keys = key_prefix + keys[-1:]
-
+			keys = key_prefix
 			func = keys.pop()
-
 			keys = '.'.join(keys)
 
 			if(re.compile('^(new\s*)?Object\([^)]*\)$').match(keys) or keys.endswith('}')):
@@ -246,8 +245,9 @@ class AutoComplations(sublime_plugin.EventListener):
 			'''
 				document.body.childNodes -> __element__.childNodes -> __nodelist__
 			'''
+
 			keys = reduce_global_allies(keys) 
-			#print keys
+			
 			if(not is_brackets_input(view)): #不是输入 '('
 
 				if keys:

@@ -159,6 +159,10 @@ def find_key_ally(view, keys, sel):
 	return keys
 
 def reduce_global_allies(keys):
+	
+	if(keyword_maps.get(keys) or keyword_maps.get('window.' + keys)): #如果已经有内容了，就返回吧
+		return keys
+
 	newKeys = keys
 
 	for reducer in global_reducer:	
@@ -245,6 +249,7 @@ class AutoComplations(sublime_plugin.EventListener):
 				
 				if keys:
 					compeletions = keyword_maps.get(keys) or keyword_maps.get('.'.join(['window', keys])) or keyword_maps.get('__default')
+				
 				else:
 					compeletions = keyword_maps.get('window')
 

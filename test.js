@@ -11,7 +11,7 @@ y = function(a,b,c){
 }
 
 y(a,b,c)
-
+StringH.byteLen(str)
 
 aElW.addClass().ancestorNode(selector)
 elW.on("blur", function(e){
@@ -30,12 +30,11 @@ el = W(texgt);
 el.addClass(cls).removeAttr(str).on(click., function(){
 	
 	});
-
+QW.
 /*x = function(){
 	
 }*/
-
-
+[].
 function(){}
 NodeW("div").attr(key).addClass(cls)
 x = document.getElementById(id).nodeType;

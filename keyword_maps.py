@@ -656,6 +656,8 @@ _shortcuts = {
 	'window.W' : keyword_maps.get('QW.NodeW')
 }
 
+[_shortcuts.get(key).update(keyword_maps.get('__function')) for key in ['window.Array', 'window.Function', 'window.String', 'window.Date']]
+
 keyword_maps.update(_shortcuts)
 
 #reduce规则
@@ -670,4 +672,5 @@ global_reducer = [
 	('__wrap(\.\w+\(.*?\))+(?=[^\w]|$)', '__wrap'),	#链式调用
 	('^[a-z]+El(ement)?(?=[^\w]|$)', '__element'),
 	('^e(vt)?(?=[^\w]|$)', '__event'),
+	('^[A-Z]([a-z]\w*)(?=[^\w]|$)', '__function')
 ]

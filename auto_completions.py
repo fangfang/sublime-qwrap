@@ -247,7 +247,7 @@ class AutoComplations(sublime_plugin.EventListener):
 				document.body.childNodes -> __element__.childNodes -> __nodelist__
 			'''
 			keys = reduce_global_allies(keys) 
-			print keys
+			#print keys
 			if(not is_brackets_input(view)): #不是输入 '('
 
 				if keys:

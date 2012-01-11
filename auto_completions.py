@@ -78,6 +78,7 @@ def capture_input(view):
 			break
 		if(keys.end() == sel.begin()): #找到了
 			return view.substr(keys).strip()
+
 		begin = keys.end()
 	return None
 
@@ -106,13 +107,11 @@ def find_in_region(view, pattern, begin, end):
 	ret.reverse()
 	return ret
 
-#得到所有不可用的区间（注释、字符串内部 etc）
+#判断是否不可用的区间（注释、字符串内部 etc）
 def in_invalid_region(view, region):
-	invalid_regions = view.find_by_selector('comment.block.js, comment.line.double-slash.js, string.quoted.single.js, string.quoted.double.js, string.regexp.js, text.html - source.js')
-	for invalid_region in invalid_regions:
-		if(invalid_region.contains(region)):
-			return True
-	return False
+	scope_name = view.scope_name(region.begin())
+
+	return scope_name.count('comment.block.js') + scope_name.count('comment.line.double-slash.js') + scope_name.count('string.quoted.single.js') + scope_name.count('string.quoted.double.js') + scope_name.count('string.regexp.js') + scope_name.count('text.html') - scope_name.count('source.js.embedded') 
 
 #TODO: 得到完整的赋值表达式
 def get_assign_expr(view, keys, scope):
@@ -128,13 +127,13 @@ def find_key_ally(view, keys, sel):
 		_surfix = m.group(1)
 		_keys = keys[:-len(_surfix)]
 
-	re.compile(r'([\[\].(){}])').sub(r'\\{\1}', _keys)
+	_keys = re.compile(r'([\[\].(){}])').sub(r'\\\1', _keys)
 
 	if(_keys):
-
 		#根据scope-chain找最近的ally（即赋值语句）
 
-		pattern = "(^|\s+)" + _keys + "\s*=\s*(new\s+)?[,\[\]\w\"\'\/\{\}]+(\(.*?\))?(\.[,\[\]\w\"\'\/\{\}]+(\(.*?\))?(\[.*\])?)*"
+		pattern = "(^|\s+)" + _keys + "\s*(=(?!=))\s*.*"
+
 		allies = find_in_region(view, pattern, 0, sel.begin()) #从近到远的allies
 
 		for ally in allies:
@@ -145,10 +144,14 @@ def find_key_ally(view, keys, sel):
 				#sel必须要在ally_scope之内
 				if(ally_scope[0] <= sel.begin() and ally_scope[1] >= sel.end()):
 					newKeys = view.substr(ally).strip()
-
-					if(newKeys.endswith(",")):
-						newKeys = newKeys[:-1]
+					#严格上来讲这样替换会有问题，因为可能会切入字符串，不过90%可用就行了
+					#字符串中恰好包含赋值的极少
+					newKeys = re.compile('[,;]\s*\w+\s*=.*$').sub('', newKeys)
 					
+					if(newKeys.endswith(",") or newKeys.endswith(";")):
+						newKeys = newKeys[:-1]
+
+					print 'ally:' + newKeys
 					newKeys = newKeys.split("=")[1].strip()+_surfix
 					
 					if(newKeys == keys):
@@ -183,9 +186,11 @@ class AutoComplations(sublime_plugin.EventListener):
 	def on_query_completions(self, view, prefix, locations):
 		
 		jsscope = view.find_by_selector('source.js')
-		if(not jsscope):
+		if(not jsscope or not view.sel()):
 			return []
-
+		
+		inputChar = view.substr(sublime.Region(locations[0]-1, locations[0]))
+		
 		line = view.substr(view.line(view.sel()[0]))
 		if(not self.scopes or re.compile('function').match(line)):
 			self.scopes = all_scopes(view)
@@ -195,11 +200,14 @@ class AutoComplations(sublime_plugin.EventListener):
 		keys = capture_input(view) or maybe_wrap(view)
 
 		if(keys):
-			if(keys.endswith('(')):
+			if(inputChar == '('):
 				keys = keys[:-1]
 
 			keys = keys.split('.')
 			key_prefix = []
+
+			if(not inputChar == '('):
+				keys.pop()
 
 			#识别变量赋值： trim = QW.StringH.trim
 			for key in keys:
@@ -208,43 +216,20 @@ class AutoComplations(sublime_plugin.EventListener):
 					key_prefix = find_key_ally(view, '.'.join(key_prefix), view.sel()[0]).split('.')
 			
 			keys = key_prefix
-			func = keys.pop()
+			if(inputChar == '('):
+				func = keys.pop()
 			keys = '.'.join(keys)
-
-			if(re.compile('^(new\s*)?Object\([^)]*\)$').match(keys) or keys.endswith('}')):
-				keys = "__object"
-
-			if(re.compile('^(new\s*)?Date\([^)]*\)$').match(keys)):
-				keys = "__date"
-			
-			if(re.compile('^(new\s*)?Array\([^)]*\)$').match(keys) or re.compile('(Array\.prototype|\[\])\.slice\.call').match(keys) or keys.endswith(']') and (keys.startswith('[') or  keys.count('[') != keys.count(']'))):
-				keys = "__array"
-			
-			if(re.compile('function\s*\w*\(.*\)').match(keys) and keys.endswith(')')):
-				keys = "__function"
-
-			if(re.compile("^\d+(.\d+)?$").match(keys)):
-				keys = "__number"
-			
-			if(keys.endswith('"') or keys.endswith("'")):
-				keys = "__string"
-			
-			if(re.compile('^(new\s*)?RegExp\([^)]*\)$').match(keys) or re.compile("\/.*\/[gim]?").match(keys)):
-				keys = "__regex"
-
-			if(re.compile("^(QW\.)?((DomU?\.)|(W?\.)|(NodeW?\.))?g\(.*?\)").match(keys) or re.compile('.*((create)|(get))Element(?!s)').match(keys)):
-				keys = "__element"
-			
-			if(re.compile("^(QW\.)?(W|NodeW)?\(.*?\)([^)]*\)[^)]*)?$").match(keys)):
-				keys = "__wrap"
 			
 			#规约规则
 			'''
 				document.body.childNodes -> __element__.childNodes -> __nodelist__
 			'''
+			print 'trigger :' + keys
 
 			keys = reduce_global_allies(keys) 
 			
+			print 'actual :' + keys
+
 			if(not is_brackets_input(view)): #不是输入 '('
 				
 				if keys:
@@ -253,13 +238,11 @@ class AutoComplations(sublime_plugin.EventListener):
 				else:
 					compeletions = keyword_maps.get('window')
 
-				if(func and func in [k.strip() for k in keys]):
-					return []
-
 				ret = []
 
-				if(func):
-					[compeletions.get(key) or compeletions.get(' '+key) or compeletions.update({key: [key]}) for key in view.extract_completions(func)]
+				#if(func):
+
+					#[compeletions.get(key) or compeletions.get(' '+key) or compeletions.update({key: [key]}) for key in view.extract_completions(func)]
 
 				keys = compeletions.keys()
 				keys.sort()
@@ -277,7 +260,9 @@ class AutoComplations(sublime_plugin.EventListener):
 					compeletions = keyword_maps.get('window').get(func) or [""]
 				
 				if(func.startswith('function')):
-					compeletions.append(func[9:-1])
+					m = re.compile('\(.*?\)').search(func)
+					if(m):
+						compeletions.append(m.group(0)[1:-1])
 
 				if(compeletions):
 					compeletions = compeletions[1:] or [""]
